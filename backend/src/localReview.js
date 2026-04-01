@@ -12,6 +12,18 @@ function hasBalancedPairs(code, open, close) {
   return count === 0;
 }
 
+function firstMatchLine(code, regex) {
+  const lines = code.split("\n");
+  for (let i = 0; i < lines.length; i += 1) {
+    if (regex.test(lines[i])) return i + 1;
+  }
+  return null;
+}
+
+function withLine(message, line) {
+  return line ? `Line ${line}: ${message}` : message;
+}
+
 function reviewJavaScript(code, bugs, optimizations, readability, security) {
   if (!hasBalancedPairs(code, "{", "}")) {
     bugs.push("Mismatched `{}` braces detected; this often causes syntax/runtime failures.");
@@ -19,20 +31,25 @@ function reviewJavaScript(code, bugs, optimizations, readability, security) {
   if (!hasBalancedPairs(code, "(", ")")) {
     bugs.push("Mismatched `()` parentheses detected.");
   }
-  if (/if\s*\([^)]*=[^=][^)]*\)/.test(code)) {
-    bugs.push("Possible assignment inside `if` condition (`=` instead of `===`).");
+  const ifAssignLine = firstMatchLine(code, /if\s*\([^)]*=[^=][^)]*\)/);
+  if (ifAssignLine) {
+    bugs.push(withLine("Possible assignment inside `if` condition (`=` instead of `===`).", ifAssignLine));
   }
-  if (/\b(var)\s+/.test(code)) {
-    readability.push("Use `let`/`const` instead of `var` for safer scoping.");
+  const varLine = firstMatchLine(code, /\b(var)\s+/);
+  if (varLine) {
+    readability.push(withLine("Use `let`/`const` instead of `var` for safer scoping.", varLine));
   }
-  if (/\bwhile\s*\(\s*true\s*\)/.test(code) && !/\bbreak\b/.test(code)) {
-    bugs.push("Potential infinite loop: `while(true)` without an obvious `break`.");
+  const whileTrueLine = firstMatchLine(code, /\bwhile\s*\(\s*true\s*\)/);
+  if (whileTrueLine && !/\bbreak\b/.test(code)) {
+    bugs.push(withLine("Potential infinite loop: `while(true)` without an obvious `break`.", whileTrueLine));
   }
-  if (/\.innerHTML\s*=/.test(code)) {
-    security.push("Direct `innerHTML` assignment can introduce XSS; prefer safer DOM APIs/sanitization.");
+  const innerHtmlLine = firstMatchLine(code, /\.innerHTML\s*=/);
+  if (innerHtmlLine) {
+    security.push(withLine("Direct `innerHTML` assignment can introduce XSS; prefer safer DOM APIs/sanitization.", innerHtmlLine));
   }
-  if (/\beval\s*\(|\bnew Function\s*\(/.test(code)) {
-    security.push("Dynamic code execution (`eval`/`Function`) increases injection risk.");
+  const evalLine = firstMatchLine(code, /\beval\s*\(|\bnew Function\s*\(/);
+  if (evalLine) {
+    security.push(withLine("Dynamic code execution (`eval`/`Function`) increases injection risk.", evalLine));
   }
   if (/\bfor\s*\(.*\)\s*\{[\s\S]{0,400}\bfor\s*\(/.test(code)) {
     optimizations.push("Nested loops found; consider maps/sets or pre-indexing for better performance.");
@@ -43,17 +60,21 @@ function reviewPython(code, bugs, optimizations, readability, security) {
   if (/^\t+.+/m.test(code) && /^ +.+/m.test(code)) {
     bugs.push("Mixed tabs and spaces detected; Python indentation may fail.");
   }
-  if (/if\s+.+\s=\s.+:/.test(code)) {
-    bugs.push("Possible assignment in condition (`=`) where `==` may be intended.");
+  const ifAssignLine = firstMatchLine(code, /if\s+.+\s=\s.+:/);
+  if (ifAssignLine) {
+    bugs.push(withLine("Possible assignment in condition (`=`) where `==` may be intended.", ifAssignLine));
   }
-  if (/\bwhile\s+True\s*:/.test(code) && !/\bbreak\b/.test(code)) {
-    bugs.push("Potential infinite loop: `while True` without an obvious `break`.");
+  const whileTrueLine = firstMatchLine(code, /\bwhile\s+True\s*:/);
+  if (whileTrueLine && !/\bbreak\b/.test(code)) {
+    bugs.push(withLine("Potential infinite loop: `while True` without an obvious `break`.", whileTrueLine));
   }
-  if (/input\(/.test(code) && /int\(\s*input\(/.test(code) === false) {
-    readability.push("If numeric input is expected, cast `input()` explicitly (for example `int(input())`).");
+  const inputLine = firstMatchLine(code, /input\(/);
+  if (inputLine && /int\(\s*input\(/.test(code) === false) {
+    readability.push(withLine("If numeric input is expected, cast `input()` explicitly (for example `int(input())`).", inputLine));
   }
-  if (/subprocess\..+shell\s*=\s*True/.test(code)) {
-    security.push("Using `subprocess` with `shell=True` can be dangerous with untrusted input.");
+  const shellTrueLine = firstMatchLine(code, /subprocess\..+shell\s*=\s*True/);
+  if (shellTrueLine) {
+    security.push(withLine("Using `subprocess` with `shell=True` can be dangerous with untrusted input.", shellTrueLine));
   }
   if (/\bfor\s+\w+\s+in\s+range\(.+\):[\s\S]{0,400}\bfor\s+\w+\s+in\s+range\(/.test(code)) {
     optimizations.push("Nested `for` loops detected; check if algorithmic complexity can be reduced.");
@@ -87,8 +108,9 @@ export function localReview({ code, language }) {
     reviewJavaScript(c, bugs_or_risks, optimizations, readability, security_notes);
   }
 
-  if (/(console\.log|print\()/i.test(c)) {
-    readability.push("Debug logging found; remove or gate logs for production code.");
+  const debugLogLine = firstMatchLine(c, /(console\.log|print\()/i);
+  if (debugLogLine) {
+    readability.push(withLine("Debug logging found; remove or gate logs for production code.", debugLogLine));
   }
   if (c.split("\n").some((line) => line.length > 140)) {
     readability.push("Very long lines found; wrapping lines improves readability and reviews.");
@@ -96,8 +118,9 @@ export function localReview({ code, language }) {
   if (/\b(password|secret|api[_-]?key|token)\b/i.test(c) && /["'][^"']{8,}["']/.test(c)) {
     security_notes.push("Potential hard-coded secret/token-like value detected; move secrets to environment variables.");
   }
-  if (/\/\s*0(?!\d)/.test(c)) {
-    bugs_or_risks.push("Possible division-by-zero detected.");
+  const divideByZeroLine = firstMatchLine(c, /\/\s*0(?!\d)/);
+  if (divideByZeroLine) {
+    bugs_or_risks.push(withLine("Possible division-by-zero detected.", divideByZeroLine));
   }
 
   if (!bugs_or_risks.length) {

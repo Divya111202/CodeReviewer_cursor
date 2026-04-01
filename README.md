@@ -109,3 +109,13 @@ Response:
 
 - This project is intentionally “no storage” for v1. A solid v2 is to add login + review history.
 
+## CodeRabbit PR Review Setup
+
+If CodeRabbit shows `0 repositories` or no PRs:
+
+- Install CodeRabbit on the same GitHub account that owns this repository.
+- Open repository settings and ensure CodeRabbit has access to this repo.
+- Create changes on a feature branch (not directly on `main`).
+- Push the branch and open a Pull Request to `main`.
+- CodeRabbit reviews PRs, so no PR means no review.
+

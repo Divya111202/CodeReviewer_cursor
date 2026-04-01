@@ -37,6 +37,31 @@ function ScorePill({ score }) {
   );
 }
 
+function VerdictPill({ result }) {
+  if (!result) {
+    return (
+      <div className="inline-flex items-center rounded-full border border-slate-700 bg-slate-800/40 px-3 py-1 text-xs text-slate-300">
+        Verdict: pending review
+      </div>
+    );
+  }
+
+  const realBugCount = (result.bugs_or_risks || []).filter(
+    (item) => !item.startsWith("No obvious")
+  ).length;
+  const hasCritical = result.score <= 4 || realBugCount >= 2;
+  const classes = hasCritical
+    ? "border-rose-500/40 bg-rose-500/10 text-rose-200"
+    : "border-emerald-500/40 bg-emerald-500/10 text-emerald-200";
+  const label = hasCritical ? "Needs fixes" : "Looks correct";
+
+  return (
+    <div className={`inline-flex items-center rounded-full border px-3 py-1 text-xs ${classes}`}>
+      Verdict: {label}
+    </div>
+  );
+}
+
 export default function App() {
   const [language, setLanguage] = useState("JavaScript");
   const [code, setCode] = useState(`function sum(a, b){\n  return a+b\n}\n\nconsole.log(sum(1, 2))\n`);
@@ -135,6 +160,14 @@ export default function App() {
                   <p className="mt-1 text-sm text-slate-400">Overall rating for production readiness.</p>
                 </div>
                 <ScorePill score={Number.isFinite(result?.score) ? result.score : 0} />
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <VerdictPill result={result} />
+                {result ? (
+                  <span className="text-xs text-slate-400">
+                    Issues: {(result?.bugs_or_risks || []).filter((item) => !item.startsWith("No obvious")).length}
+                  </span>
+                ) : null}
               </div>
               <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/30 p-3">
                 <p className="text-xs font-semibold text-slate-300">Summary</p>

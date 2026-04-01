@@ -1,0 +1,16 @@
+{
+  "name": "ai-code-reviewer",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev": "npx concurrently -n backend,frontend -c magenta,cyan \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "start:backend": "npm --prefix backend start",
+    "build:frontend": "npm --prefix frontend run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
+

@@ -6,7 +6,8 @@
   "main": "src/index.js",
   "scripts": {
     "dev": "node --watch src/index.js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "test": "node --test src/localReview.test.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.1",
@@ -16,4 +17,3 @@
     "zod": "^3.23.8"
   }
 }
-
